@@ -2,61 +2,153 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Jaypee College Portal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <style>
     body { font-family: sans-serif; }
-    .shadow-3xl {
-      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1),
-                  0 10px 10px -5px rgba(0,0,0,0.04);
-    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
   </style>
 </head>
-<body class="bg-gradient-to-br from-blue-300 to-indigo-500 min-h-screen flex items-center justify-center p-6">
+<body class="bg-gradient-to-br from-blue-300 to-indigo-500 min-h-screen p-6 text-gray-800">
 
-  <div id="portal" class="w-full max-w-md bg-white/20 border border-white/30 rounded-[30px] backdrop-blur-xl shadow-3xl p-8 space-y-6 text-white">
-    <h2 class="text-4xl font-extrabold text-center drop-shadow-lg">Jaypee College Portal</h2>
-    <input id="username" class="w-full bg-white/80 text-black rounded-xl px-4 py-2 text-lg mb-2" placeholder="Enter your username" />
-    <input id="email" class="w-full bg-white/80 text-black rounded-xl px-4 py-2 text-lg mb-2" placeholder="Enter your email" />
-    <input id="password" type="password" class="w-full bg-white/80 text-black rounded-xl px-4 py-2 text-lg mb-2" placeholder="Enter your password" />
-    <button onclick="signIn()" class="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-lg rounded-xl shadow-xl">Sign Up</button>
+  <!-- Sign Up Section -->
+  <div id="auth-section" class="max-w-md mx-auto bg-white/30 p-6 rounded-2xl shadow-xl backdrop-blur-md">
+    <h1 class="text-3xl font-bold text-center mb-4">Jaypee College Portal</h1>
+    <input id="username" placeholder="Enter your username" class="w-full mb-2 p-2 rounded" />
+    <input id="email" placeholder="Enter your email" class="w-full mb-2 p-2 rounded" />
+    <input id="password" type="password" placeholder="Enter your password" class="w-full mb-2 p-2 rounded" />
+    <button onclick="signIn()" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">Sign Up</button>
+  </div>
+
+  <!-- Main Portal Section -->
+  <div id="main-portal" class="hidden">
+    <h1 class="text-4xl font-bold text-center mb-6">Welcome, <span id="userDisplay"></span></h1>
+
+    <!-- Tabs -->
+    <div class="flex justify-center gap-4 mb-6">
+      <button onclick="switchTab('chat')" class="tab-button bg-white p-2 rounded shadow">Group Chat</button>
+      <button onclick="switchTab('video')" class="tab-button bg-white p-2 rounded shadow">Video Chat</button>
+      <button onclick="switchTab('problem')" class="tab-button bg-white p-2 rounded shadow">Problem Center</button>
+      <button onclick="switchTab('community')" class="tab-button bg-white p-2 rounded shadow">Community</button>
+    </div>
+
+    <!-- Group Chat Tab -->
+    <div id="chat" class="tab-content active bg-white p-4 rounded shadow mb-6">
+      <h2 class="text-xl font-semibold mb-2">Group Chat</h2>
+      <div id="chatBox" class="h-40 overflow-y-auto border p-2 mb-2"></div>
+      <input id="chatMessage" class="w-full p-2 border rounded mb-2" placeholder="Type a message..." />
+      <button onclick="sendMessage()" class="w-full bg-blue-600 text-white p-2 rounded">Send</button>
+    </div>
+
+    <!-- Video Chat Tab -->
+    <div id="video" class="tab-content bg-white p-4 rounded shadow mb-6">
+      <h2 class="text-xl font-semibold mb-2">Live Video</h2>
+      <video id="webcam" autoplay muted class="w-full rounded mb-2"></video>
+      <input id="videoMessage" class="w-full p-2 border rounded mb-2" placeholder="Say something..." />
+      <button onclick="sendVideoMessage()" class="w-full bg-blue-600 text-white p-2 rounded">Send</button>
+      <div id="videoChatBox" class="h-32 overflow-y-auto border p-2 mt-2"></div>
+    </div>
+
+    <!-- Problem Center Tab -->
+    <div id="problem" class="tab-content bg-white p-4 rounded shadow mb-6">
+      <h2 class="text-xl font-semibold mb-2">Problem Center</h2>
+      <select id="problemCategory" class="w-full p-2 mb-2 border rounded">
+        <option value="Coding">Coding</option>
+        <option value="Theory">Theory</option>
+        <option value="GK">General Knowledge</option>
+      </select>
+      <input id="problemText" class="w-full p-2 border rounded mb-2" placeholder="Describe your problem..." />
+      <button onclick="postProblem()" class="w-full bg-blue-600 text-white p-2 rounded">Post Problem</button>
+      <div id="problemList" class="mt-2"></div>
+    </div>
+
+    <!-- Community Tab -->
+    <div id="community" class="tab-content bg-white p-4 rounded shadow mb-6">
+      <h2 class="text-xl font-semibold mb-2">Community</h2>
+      <ul id="studentList" class="list-disc pl-6"></ul>
+    </div>
   </div>
 
   <script>
+    const students = ["Aman", "Riya", "Karan", "Neha", "Sohan", "Priya"];
+    const messages = [];
+    const videoMessages = [];
+    const problems = [];
+
     function signIn() {
-      const username = document.getElementById("username").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
-
-      if (username && email && password) {
-        localStorage.setItem("username", username);
-        alert("Welcome, " + username + "!");
-        document.getElementById("portal").innerHTML = \`
-          <h1 class="text-4xl font-bold text-center text-white mb-4">Welcome, \${username}</h1>
-          <p class="text-center text-white">You are now signed in. This is a static demo.</p>
-          <button onclick="logout()" class="mt-6 w-full py-2 bg-red-500 hover:bg-red-600 text-white text-lg rounded-xl shadow-xl">Logout</button>
-        \`;
+      const name = document.getElementById('username').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const pass = document.getElementById('password').value.trim();
+      if (name && email && pass) {
+        document.getElementById("auth-section").style.display = "none";
+        document.getElementById("main-portal").style.display = "block";
+        document.getElementById("userDisplay").textContent = name;
+        students.push(name);
+        navigator.mediaDevices.getUserMedia({ video: true, audio: false }).then(stream => {
+          document.getElementById("webcam").srcObject = stream;
+        }).catch(console.error);
+        updateStudentList();
       } else {
-        alert("Please fill out all fields.");
+        alert("Please fill all fields");
       }
     }
 
-    function logout() {
-      localStorage.removeItem("username");
-      location.reload();
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+      document.getElementById(tabId).classList.add("active");
     }
 
-    window.onload = () => {
-      const savedUser = localStorage.getItem("username");
-      if (savedUser) {
-        document.getElementById("portal").innerHTML = \`
-          <h1 class="text-4xl font-bold text-center text-white mb-4">Welcome back, \${savedUser}</h1>
-          <p class="text-center text-white">You're signed in. This is a static demo.</p>
-          <button onclick="logout()" class="mt-6 w-full py-2 bg-red-500 hover:bg-red-600 text-white text-lg rounded-xl shadow-xl">Logout</button>
-        \`;
+    function sendMessage() {
+      const input = document.getElementById("chatMessage");
+      const msg = input.value.trim();
+      if (msg) {
+        messages.push("You: " + msg);
+        updateChat();
+        input.value = "";
       }
-    };
+    }
+
+    function sendVideoMessage() {
+      const input = document.getElementById("videoMessage");
+      const msg = input.value.trim();
+      if (msg) {
+        videoMessages.push("You: " + msg);
+        updateVideoChat();
+        input.value = "";
+      }
+    }
+
+    function postProblem() {
+      const text = document.getElementById("problemText").value.trim();
+      const cat = document.getElementById("problemCategory").value;
+      if (text) {
+        problems.push({ sender: "You", category: cat, text });
+        updateProblemList();
+        document.getElementById("problemText").value = "";
+      }
+    }
+
+    function updateChat() {
+      const box = document.getElementById("chatBox");
+      box.innerHTML = messages.map(m => `<div>${m}</div>`).join("");
+    }
+
+    function updateVideoChat() {
+      const box = document.getElementById("videoChatBox");
+      box.innerHTML = videoMessages.map(m => `<div>${m}</div>`).join("");
+    }
+
+    function updateProblemList() {
+      const box = document.getElementById("problemList");
+      box.innerHTML = problems.map(p => `<div><strong>${p.sender} [${p.category}]</strong>: ${p.text}</div>`).join("");
+    }
+
+    function updateStudentList() {
+      const ul = document.getElementById("studentList");
+      ul.innerHTML = students.map(s => `<li>${s}</li>`).join("");
+    }
   </script>
 </body>
 </html>
